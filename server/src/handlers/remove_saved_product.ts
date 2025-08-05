@@ -1,7 +1,21 @@
 
+import { db } from '../db';
+import { savedProductsTable } from '../db/schema';
+import { eq, and } from 'drizzle-orm';
+
 export async function removeSavedProduct(userId: string, savedProductId: string): Promise<void> {
-  // This is a placeholder declaration! Real code should be implemented here.
-  // The goal of this handler is removing a product from user's saved products.
-  // Should verify ownership and delete from saved_products table.
-  return Promise.resolve();
+  try {
+    // Delete the saved product, ensuring it belongs to the user
+    await db.delete(savedProductsTable)
+      .where(
+        and(
+          eq(savedProductsTable.id, savedProductId),
+          eq(savedProductsTable.user_id, userId)
+        )
+      )
+      .execute();
+  } catch (error) {
+    console.error('Remove saved product failed:', error);
+    throw error;
+  }
 }

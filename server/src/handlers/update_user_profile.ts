@@ -1,17 +1,38 @@
 
+import { db } from '../db';
+import { usersTable } from '../db/schema';
 import { type UpdateUserProfileInput, type User } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function updateUserProfile(userId: string, input: UpdateUserProfileInput): Promise<User> {
-  // This is a placeholder declaration! Real code should be implemented here.
-  // The goal of this handler is updating user profile information.
-  // Should update the users table with new profile data and return updated user.
-  return Promise.resolve({
-    id: userId,
-    email: 'placeholder@example.com',
-    full_name: input.full_name || null,
-    avatar_url: input.avatar_url || null,
-    subscription_tier: 'free' as const,
-    created_at: new Date(),
-    updated_at: new Date()
-  });
-}
+export const updateUserProfile = async (userId: string, input: UpdateUserProfileInput): Promise<User> => {
+  try {
+    // Build update object with only provided fields
+    const updateData: any = {
+      updated_at: new Date()
+    };
+
+    if (input.full_name !== undefined) {
+      updateData.full_name = input.full_name;
+    }
+
+    if (input.avatar_url !== undefined) {
+      updateData.avatar_url = input.avatar_url;
+    }
+
+    // Update user record
+    const result = await db.update(usersTable)
+      .set(updateData)
+      .where(eq(usersTable.id, userId))
+      .returning()
+      .execute();
+
+    if (result.length === 0) {
+      throw new Error(`User with id ${userId} not found`);
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error('User profile update failed:', error);
+    throw error;
+  }
+};
